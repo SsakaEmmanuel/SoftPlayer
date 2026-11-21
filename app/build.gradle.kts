@@ -26,5 +26,7 @@ dependencies {
  implementation("androidx.compose.foundation:foundation:1.7.6")
  implementation("androidx.media3:media3-exoplayer:1.5.1")
  implementation("androidx.media3:media3-common:1.5.1")
+ implementation("androidx.media3:media3-session:1.5.1")
+ implementation("com.google.guava:guava:33.4.0-android")
  debugImplementation("androidx.compose.ui:ui-tooling:1.7.6")
 }
