@@ -54,7 +54,7 @@ class MainActivity:ComponentActivity(){
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);allowed=ContextCompat.checkSelfPermission(this,perm)==PackageManager.PERMISSION_GRANTED;if(allowed)scan()
  future=MediaController.Builder(this,SessionToken(this,ComponentName(this,SoftPlayerPlaybackService::class.java))).buildAsync()
  future?.addListener({try{controller=future?.get()}catch(_:Exception){}},MoreExecutors.directExecutor())
- setContent { AppTheme(content = { PlayerUI(songs, allowed, controller, ask = { request.launch(perm) }) }) }
+ setContent { AppTheme(content = { PlayerUI(songs, allowed, controller, ask = { request.launch(perm) }) }) } }
  private fun scan(){val u=MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;val cols=arrayOf(MediaStore.Audio.Media._ID,MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.ARTIST,MediaStore.Audio.Media.DURATION,MediaStore.Audio.Media.DISPLAY_NAME)
  contentResolver.query(u,cols,"${MediaStore.Audio.Media.IS_MUSIC} != 0",null,MediaStore.Audio.Media.TITLE+" ASC")?.use{c->val id=c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);val t=c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);val a=c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);val d=c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);val n=c.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);val l=mutableListOf<Song>();while(c.moveToNext()){val x=c.getLong(id);val file=c.getString(n)?: "";l.add(Song(x,c.getString(t)?:file,c.getString(a)?.takeIf{it!="<unknown>"}?:"Unknown artist",ContentUris.withAppendedId(u,x),c.getLong(d),file))};songs=l}}
  override fun onDestroy(){future?.let{MediaController.releaseFuture(it)};super.onDestroy()}
