@@ -51,7 +51,7 @@ class MainActivity:ComponentActivity(){
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);allowed=ContextCompat.checkSelfPermission(this,perm)==PackageManager.PERMISSION_GRANTED;if(allowed)scan()
   future=MediaController.Builder(this,SessionToken(this,ComponentName(this,SoftPlayerPlaybackService::class.java))).buildAsync()
   future?.addListener({try{controller=future?.get()}catch(_:Exception){}},MoreExecutors.directExecutor())
-  setContent{AppTheme{PlayerUI(songs,allowed,controller){request.launch(perm)}}}
+  setContent { AppTheme(content = { PlayerUI(songs, allowed, controller, ask = { request.launch(perm) }) }) }
  }
  private fun scan(){val u=MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;val cols=arrayOf(MediaStore.Audio.Media._ID,MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.ARTIST,MediaStore.Audio.Media.DURATION,MediaStore.Audio.Media.DISPLAY_NAME)
   contentResolver.query(u,cols,"${MediaStore.Audio.Media.IS_MUSIC} != 0",null,MediaStore.Audio.Media.TITLE+" ASC")?.use{c->
@@ -67,7 +67,7 @@ class SoftPlayerPlaybackService:androidx.media3.session.MediaSessionService(){
  override fun onGetSession(info:androidx.media3.session.MediaSession.ControllerInfo):androidx.media3.session.MediaSession?=session
  override fun onDestroy(){session?.let{it.player.release();it.release()};session=null;super.onDestroy()}
 }
-@Composable private fun AppTheme(content:@Composable()->Unit){MaterialTheme(colorScheme=darkColorScheme(primary=Color(0xFFC56BFF),background=Color(0xFF0B0B12),surface=Color(0xFF191624)),content=content)}
+@Composable private fun AppTheme(content: @Composable () -> Unit) { MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFFC56BFF), background = Color(0xFF0B0B12), surface = Color(0xFF191624)), content = content) }
 private fun format(s:Song)=when(s.filename.substringAfterLast('.', "").lowercase()){"mp3"->"MP3";"wav"->"WAV";"aac","m4a"->"AAC";"ogg","oga"->"OGG";"flac"->"FLAC";"wma"->"WMA";else->"OTHER"}
 private fun tm(ms:Long):String{val x=(ms/1000).coerceAtLeast(0);return "%d:%02d".format(x/60,x%60)}
 @Composable private fun PlayerUI(songs:List<Song>,allowed:Boolean,p:Player?,ask:()->Unit){
@@ -89,7 +89,7 @@ private fun tm(ms:Long):String{val x=(ms/1000).coerceAtLeast(0);return "%d:%02d"
    else{LazyColumn(Modifier.weight(1f)){items(list,key={it.id}){s->Row(Modifier.fillMaxWidth().clickable{play(songs.indexOf(s))}.padding(vertical=8.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(44.dp).background(Color(0xFF211A30),RoundedCornerShape(11.dp)),contentAlignment=Alignment.Center){Icon(Icons.Default.MusicNote,null,tint=Color(0xFFC56BFF))};Spacer(Modifier.width(10.dp));Column(Modifier.weight(1f)){Text(s.title,maxLines=1,overflow=TextOverflow.Ellipsis);Text("${s.artist} • ${format(s)}",fontSize=12.sp,color=Color.Gray)};Text(tm(s.duration),fontSize=12.sp,color=Color.Gray)};HorizontalDivider()}}}
   }else{
    if(song==null){Box(Modifier.weight(1f).fillMaxWidth(),contentAlignment=Alignment.Center){Text("Select a song from Library",color=Color.Gray)}}
-   else{Column(Modifier.weight(1f),horizontalAlignment=Alignment.Center,verticalArrangement=Arrangement.Center){Disc(playing);Spacer(Modifier.height(20.dp));Text(song.title,fontSize=21.sp,fontWeight=FontWeight.Bold,maxLines=1,overflow=TextOverflow.Ellipsis);Text(song.artist,color=Color.Gray);Text(format(song),color=Color(0xFFC56BFF),fontSize=12.sp);Slider(value=if(dur>0)pos.toFloat().coerceIn(0f,dur.toFloat())else 0f,onValueChange={pos=it.toLong()},onValueChangeFinished={p?.seekTo(pos)},valueRange=0f..dur.coerceAtLeast(1).toFloat());Row{Text(tm(pos),fontSize=12.sp,color=Color.Gray);Spacer(Modifier.weight(1f));Text(tm(dur),fontSize=12.sp,color=Color.Gray)}
+   else{Column(Modifier.weight(1f),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){Disc(playing);Spacer(Modifier.height(20.dp));Text(song.title,fontSize=21.sp,fontWeight=FontWeight.Bold,maxLines=1,overflow=TextOverflow.Ellipsis);Text(song.artist,color=Color.Gray);Text(format(song),color=Color(0xFFC56BFF),fontSize=12.sp);Slider(value=if(dur>0)pos.toFloat().coerceIn(0f,dur.toFloat())else 0f,onValueChange={pos=it.toLong()},onValueChangeFinished={p?.seekTo(pos)},valueRange=0f..dur.coerceAtLeast(1).toFloat());Row{Text(tm(pos),fontSize=12.sp,color=Color.Gray);Spacer(Modifier.weight(1f));Text(tm(dur),fontSize=12.sp,color=Color.Gray)}
     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically){IconButton(onClick=prev){Icon(Icons.Default.SkipPrevious,null,Modifier.size(36.dp))};IconButton(onClick={if(playing)p?.pause()else p?.play()},Modifier.size(56.dp).background(Color(0xFF7D28C8),CircleShape)){Icon(if(playing)Icons.Default.Pause else Icons.Default.PlayArrow,null,Modifier.size(32.dp))};IconButton(onClick=next){Icon(Icons.Default.SkipNext,null,Modifier.size(36.dp))};IconButton(onClick={p?.stop();idx=-1;pos=0;tab="Library"}){Icon(Icons.Default.Stop,null,Modifier.size(32.dp))}}
     Text("Background playback enabled",fontSize=12.sp,color=Color.Gray,modifier=Modifier.padding(top=14.dp))}}
   }
